@@ -1,0 +1,49 @@
+# ===== 打包产物 =====
+dist/
+build/
+*.spec.bak
+
+# ===== Python =====
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+venv/
+env/
+
+# ===== 运行时 / 调试产物 =====
+output/
+verify/
+*.detect/
+*.work/
+
+# ===== 大二进制 / 媒体（分发走 GitHub Release，不进仓库） =====
+*.mp4
+*.mov
+*.avi
+*.mkv
+*.flv
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.zip
+*.exe
+*.dll
+*.so
+*.pth
+
+# ===== 第三方二进制 =====
+ffmpeg/
+ffprobe/
+
+# ===== 编辑器 / 系统 =====
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+
+# ===== 环境变量 / 密钥 =====
+.env
+*.local

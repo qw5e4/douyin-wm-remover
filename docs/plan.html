@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>抖音去水印工具 · 技术方案</title>
+<style>
+:root{
+  --bg:#ffffff; --surface:#f7f7f5; --surface2:#f1efe8;
+  --line:#e3e1da; --line2:#d3d1c7;
+  --tx:#1c1c1a; --tx2:#5f5e5a; --tx3:#888780;
+  --blue:#185fa5; --blue-bg:#e6f1fb; --blue-line:#85b7eb;
+  --teal:#0f6e56; --teal-bg:#e1f5ee; --teal-line:#5dcaa5;
+  --red:#a32d2d; --red-bg:#fcebeb; --red-line:#f09595;
+  --amber:#854f0b; --amber-bg:#faeeda; --amber-line:#ef9f27;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{
+  font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;
+  background:var(--bg); color:var(--tx);
+  font-size:14px; line-height:1.7; padding:0 0 60px;
+}
+.wrap{max-width:920px;margin:0 auto;padding:0 28px}
+header{padding:44px 0 28px;border-bottom:1px solid var(--line);margin-bottom:32px}
+h1{font-size:22px;font-weight:500;letter-spacing:-.2px}
+.sub{color:var(--tx2);font-size:13px;margin-top:6px}
+h2{font-size:17px;font-weight:500;margin:44px 0 16px;padding-left:11px;border-left:3px solid var(--blue)}
+h3{font-size:14px;font-weight:500;margin:24px 0 10px;color:var(--tx)}
+p{margin-bottom:12px;color:var(--tx)}
+p.muted{color:var(--tx2);font-size:13px}
+ul{margin:0 0 14px 20px}
+li{margin-bottom:6px}
+code{font-family:"SF Mono",Consolas,monospace;font-size:12.5px;background:var(--surface2);
+  padding:1.5px 5px;border-radius:4px;color:#26215c}
+pre{background:var(--surface);border:1px solid var(--line);border-radius:8px;
+  padding:14px 16px;overflow-x:auto;margin:12px 0;font-size:12.5px;line-height:1.65}
+pre code{background:none;padding:0;color:var(--tx)}
+
+table{width:100%;border-collapse:collapse;margin:14px 0;font-size:13px}
+th{text-align:left;font-weight:500;background:var(--surface);color:var(--tx2);
+  padding:9px 12px;border-bottom:1px solid var(--line2);font-size:12.5px}
+td{padding:11px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+tr:last-child td{border-bottom:none}
+
+.tag{display:inline-block;font-size:11.5px;padding:2px 8px;border-radius:20px;
+  font-weight:500;white-space:nowrap;line-height:1.5}
+.t-ok{background:var(--teal-bg);color:var(--teal);border:1px solid var(--teal-line)}
+.t-part{background:var(--amber-bg);color:var(--amber);border:1px solid var(--amber-line)}
+.t-no{background:var(--red-bg);color:var(--red);border:1px solid var(--red-line)}
+.t-info{background:var(--blue-bg);color:var(--blue);border:1px solid var(--blue-line)}
+
+.layer{border:1px solid var(--line);border-radius:12px;padding:18px 20px;margin-bottom:14px;background:var(--bg)}
+.layer.ok{border-left:3px solid var(--teal)}
+.layer.part{border-left:3px solid var(--amber)}
+.layer.no{border-left:3px solid var(--red)}
+.layer-head{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin-bottom:10px}
+.layer-head .n{font-size:15px;font-weight:500}
+.layer-head .lv{font-size:12px;color:var(--tx3);font-family:monospace}
+
+.callout{background:var(--amber-bg);border:1px solid var(--amber-line);border-radius:10px;
+  padding:14px 18px;margin:18px 0;font-size:13.5px}
+.callout.blue{background:var(--blue-bg);border-color:var(--blue-line)}
+.callout.red{background:var(--red-bg);border-color:var(--red-line)}
+.callout b{font-weight:500}
+
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:14px 0}
+.card{border:1px solid var(--line);border-radius:10px;padding:14px 16px;background:var(--surface)}
+.card .ct{font-size:13px;font-weight:500;margin-bottom:6px}
+.card .cd{font-size:12.5px;color:var(--tx2);line-height:1.6}
+
+.arch{background:var(--surface);border:1px solid var(--line);border-radius:10px;
+  padding:18px 20px;font-family:"SF Mono",Consolas,monospace;font-size:12.5px;
+  line-height:1.85;overflow-x:auto;color:var(--tx)}
+.arch .cm{color:var(--tx3)}
+
+.steps{counter-reset:s;margin:14px 0}
+.step{position:relative;padding-left:34px;margin-bottom:16px}
+.step::before{counter-increment:s;content:counter(s);position:absolute;left:0;top:1px;
+  width:22px;height:22px;border-radius:50%;background:var(--blue-bg);color:var(--blue);
+  border:1px solid var(--blue-line);font-size:11.5px;font-weight:500;
+  display:flex;align-items:center;justify-content:center}
+.step .st{font-weight:500;margin-bottom:2px}
+.step .sd{font-size:13px;color:var(--tx2)}
+footer{margin-top:48px;padding-top:20px;border-top:1px solid var(--line);
+  font-size:12.5px;color:var(--tx3)}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <h1>抖音去水印工具 · 技术方案</h1>
+  <div class="sub">调研 + 方案设计 ｜ 2026-09-26</div>
+</header>
+
+<h2>一、先纠正三个认知</h2>
+
+<div class="callout red">
+  <b>1. 抖音的"暗水印"至少有两种，别混为一谈。</b>
+  <ul style="margin:8px 0 0 20px">
+    <li><b>像素频域盲水印（真·暗水印）：</b>字节官方口径，2026 年 3 月底才上线，<b>仅在巨量千川 / 本地推 / 巨量营销的广告素材链路</b>生效。自然流 / 个人视频不打。这一层确实难破（密钥在字节手里）。</li>
+    <li><b>编码层来源烙印（BVC 品牌）：</b>所有经抖音<b>服务端转码</b>下发的视频，H.264 码流的 SEI 里都烙着字节自家编码器品牌 <code>bvc0ot v2.2.1.3-20250220</code>（实测铁证见 L4a）。与广告链路无关，<b>自然流视频一样带</b>。这不是频域水印，却是最隐蔽的"此片出自抖音"来源指纹 —— remux 清不掉，必须重编码。</li>
+  </ul>
+</div>
+
+<div class="callout blue">
+  <b>2. 网上流传的去暗水印教程基本是心理安慰。</b>那篇被大量转载的文章让你用 <code>blind-video-watermark</code> "提取看看抖音嵌了什么"——这是伪操作。那是 eluv-io 的通用 DTCWT 水印库，用来嵌<b>自己</b>的水印，算法和密钥与字节完全无关，提取不出任何东西。<code>invisible_video_watermark</code> 同理，是<b>嵌入</b>工具不是破解工具。至于"加噪点 + 裁 7% 边 + 重编码"，属于盲打：<b>你没有字节的提取器，永远无法验证成没成</b>。
+</div>
+
+<div class="callout">
+  <b>3. <code>playwm → play</code> 字符串替换已不可靠。</b>这是 2020 年前后的老技巧，抖音早已升级，分享页提取的地址替换后仍可能带水印。现在的正解是走 Web 详情 API 直接取 <code>play_addr</code> 字段。
+</div>
+
+<h2>二、水印五层谱系</h2>
+<p class="muted">按"标识存在于哪个层面"划分。不同层面互不相关，必须分层处理，混着做一定走弯路。</p>
+
+<table>
+<thead><tr><th style="width:64px">层</th><th style="width:150px">名称</th><th>本质</th><th style="width:96px">可行性</th></tr></thead>
+<tbody>
+<tr><td><code>L1</code></td><td>容器元数据层</td><td>MP4 atom（moov/udta、meta/ilst、XMP、uuid box）、handler_name、编码器品牌、文件名、时间戳</td><td><span class="tag t-ok">完全可清</span></td></tr>
+<tr><td><code>L2</code></td><td>像素可见层<br><span class="muted" style="font-size:12px">（明水印）</span></td><td>渲染进画面的抖音 LOGO、抖音号、飘浮 ID、片尾落版、特效贴纸标识</td><td><span class="tag t-ok">源片路径 100%</span><br><span class="tag t-part" style="margin-top:4px">AI 擦除 ~90%</span></td></tr>
+<tr><td><code>L3</code></td><td>服务端副本层</td><td>平台分发的两个副本：<code>download_addr</code> 带水印 / <code>play_addr</code> 无水印。原片一直在服务器上</td><td><span class="tag t-ok">可绕过</span></td></tr>
+<tr><td><code>L4a</code></td><td>编码层来源烙印<br><span class="muted" style="font-size:12px">（BVC 品牌）</span></td><td>H.264 SEI 里的字节编码器品牌 <code>bvc0ot</code>。所有抖音服务端转码视频都带，最隐蔽的"来源指纹"</td><td><span class="tag t-part">重编码可清</span></td></tr>
+<tr><td><code>L4b</code></td><td>像素频域暗水印<br><span class="muted" style="font-size:12px">（真·暗水印）</span></td><td>像素频域嵌入的追踪标识。仅广告投放链路，密钥在字节手中</td><td><span class="tag t-no">无方案</span></td></tr>
+<tr><td><code>L5</code></td><td>内容指纹层<br><span class="muted" style="font-size:12px">（非水印）</span></td><td>视频指纹、音频指纹、分镜相似度。<b>不在文件里，在平台侧</b></td><td><span class="tag t-no">工具管不了</span></td></tr>
+</tbody>
+</table>
+
+<div class="callout blue">
+<b>L5 才是真正的坑。</b>就算你把 L1–L3 全部处理干净，视频指纹和音频指纹依然存在——那是画面内容本身的数学特征，不是附加的标记。平台判定搬运主要靠这一层。任何"去水印工具"都管不了它，只能靠内容层面的改造（换机位 / 换装 / 换场景 / 换 BGM / 重剪辑节奏）。
+</div>
+
+<h2>三、逐层处理方案</h2>
+
+<div class="layer ok">
+  <div class="layer-head"><span class="n">L1 容器元数据层</span><span class="lv">无损 · 秒级 · 100% 可清</span></div>
+  <p>元数据独立于音视频流，用 remux（重封装）剥离即可，<b>不重编码、画质零损失</b>。</p>
+  <pre><code>ffmpeg -i in.mp4 -map 0 -c copy -map_metadata -1 -map_chapters -1 out.mp4
+# 深度清理（含 XMP / 自定义 atom）
+exiftool -all= -overwrite_original out.mp4</code></pre>
+  <p class="muted">验证：<code>mediainfo</code> 或 <code>exiftool -G -a -s</code>，应只剩容器基础信息。注意 remux 只清容器，像素里的东西原样保留。</p>
+</div>
+
+<div class="layer ok">
+  <div class="layer-head"><span class="n">L2 像素可见层 —— 明水印的五种形态</span><span class="lv">两条路径</span></div>
+  <table style="margin-top:6px">
+  <thead><tr><th style="width:120px">形态</th><th>特征</th><th style="width:80px">难度</th></tr></thead>
+  <tbody>
+  <tr><td>静态角标</td><td>右下 / 左下角抖音号 + LOGO，位置固定不移</td><td>低</td></tr>
+  <tr><td>动态飘浮</td><td>半透明抖音号 ID，缓慢来回移动，透明度 / 大小随背景自适应</td><td>中高</td></tr>
+  <tr><td>片尾落版</td><td>最后几秒的引导关注贴片、蓝 V 动画，带渐变缩放</td><td>中</td></tr>
+  <tr><td>特效贴纸</td><td>特效 / 模板作者标识，位置不固定</td><td>中高</td></tr>
+  <tr><td>直播回放</td><td>直播间 ID + LOGO + 滚动关注提示，动静结合</td><td>高</td></tr>
+  </tbody>
+  </table>
+  <p style="margin-top:14px"><b>路径 A（首选）：拿源片。</b>不擦，直接取无水印原流 —— 零损失、秒级、天然干净，动态水印也一并消失。</p>
+  <p><b>路径 B（已有带水印文件时）：视频修复硬擦。</b>双后端设计（<b>已实现并实测跑通</b>）：</p>
+  <div class="grid2">
+    <div class="card"><div class="ct">基础档 · OpenCV inpaint（当前可用 ✅）</div><div class="cd">逐帧修复 + 蒙版膨胀。零依赖、立即可跑，对固定角落水印（背景简单）效果干净。已用真实素材闭环验证：右下角水印完全擦除、无残留。局限：无视频时序传播，大面积遮挡 / 快速运动场景可能有涂抹感。</div></div>
+    <div class="card"><div class="ct">无痕档 · ProPainter（预留升级 ⏸）</div><div class="cd">双域传播 + 掩码引导稀疏 Transformer，时序一致，布料纹理 / 人物运动下更连续。<b>当前受阻：</b>依赖 mmcv，Python 3.13 + Windows 无预编译 wheel、源码编译失败；GitHub 访问受限代码拉取超时。升级路径：换 Python 3.11 venv 或云端 GPU 跑。</div></div>
+  </div>
+  <div class="callout blue" style="margin:12px 0">
+    <b>实测验证（2026-09-26，GTX 1650Ti 4GB）：</b>maskgen 蒙版生成（右下角 corner 矩形）+ OpenCV inpaint（TELEA，蒙版膨胀 5×5）+ 降采样推理（长边 480~720 省显存）+ 上采样回原分辨率合成音频。测试样本（576×1028，水印占宽 24% 贴近真实抖音水印）→ <b>右下角水印完全擦除、无残留、无白边</b>。注意：测试样本水印占比必须按源分辨率比例造（早期固定 300px 导致占比 52% 失真，擦不干净的根因是样本问题不是引擎问题）。
+  </div>
+  <p class="muted">工程策略：默认 OpenCV 基础档（自动选档：ProPainter 可用则用），inpaint 内部 libx264 重编码顺带清除 L1 元数据与 L4a BVC 烙印，<b>勾选擦除后无需二次编码</b>。硬擦<b>不能保证完全无痕</b>，大面积遮挡 + 快速运动会有残留风险，需要抽检。</p>
+</div>
+
+<div class="layer ok">
+  <div class="layer-head"><span class="n">L3 服务端副本层 —— 解析链路</span><span class="lv">最优解</span></div>
+  <div class="steps">
+    <div class="step"><div class="st">提取链接</div><div class="sd">从分享文案中正则提取 HTTP 链接（支持整段粘贴）</div></div>
+    <div class="step"><div class="st">短链跳转</div><div class="sd"><code>v.douyin.com/xxx</code> 跟随重定向 → <code>www.douyin.com/video/{id}</code> 或 <code>/note/{id}</code></div></div>
+    <div class="step"><div class="st">取 aweme_id</div><div class="sd">从跳转后的长链接中提取作品 ID</div></div>
+    <div class="step"><div class="st">拿凭证</div><div class="sd">移动 UA 请求 <code>m.douyin.com/share/video/{id}</code>，响应 Set-Cookie 下发 <b>ttwid</b>；另需生成 <b>msToken</b></div></div>
+    <div class="step"><div class="st">签名 + 调详情 API</div><div class="sd"><code>GET /aweme/v1/web/aweme/detail/?aweme_id=&aid=6383&device_platform=webapp</code>，需带 <b>a_bogus</b> 签名</div></div>
+    <div class="step"><div class="st">选对字段</div><div class="sd">见下方对照表 —— 这是最容易搞错的一步</div></div>
+    <div class="step"><div class="st">下载 + 校验文件头</div><div class="sd">校验 MP4 <code>ftyp</code> 魔数，防止把人机验证页存成视频</div></div>
+  </div>
+  <table>
+  <thead><tr><th style="width:210px">字段</th><th style="width:100px">是否无水印</th><th>说明</th></tr></thead>
+  <tbody>
+  <tr><td><code>video.play_addr.url_list[0]</code></td><td><span class="tag t-ok">无水印</span></td><td>首选，路径特征含 <code>/tos/cn/tos-cn-ve-15/</code></td></tr>
+  <tr><td><code>video.bit_rate[0].play_addr</code></td><td><span class="tag t-ok">无水印</span></td><td>多码率候选，可取更高质量档</td></tr>
+  <tr><td><code>video.download_addr.url_list[0]</code></td><td><span class="tag t-no">带水印</span></td><td>URL 带 <code>watermark=1</code>、含 <code>logo_name</code> 字段，路径含 <code>/mps/logo/</code>。仅作兜底</td></tr>
+  <tr><td><code>images[].url_list</code></td><td><span class="tag t-ok">无水印</span></td><td>图文，模板 <code>~tplv-dy-aweme-images</code></td></tr>
+  <tr><td><code>images[].download_url_list</code></td><td><span class="tag t-no">带水印</span></td><td>模板 <code>~tplv-dy-water-v2</code>，不用</td></tr>
+  <tr><td><code>images[].video.play_addr</code></td><td><span class="tag t-ok">无水印</span></td><td>动态图文（live photo）的动态视频部分</td></tr>
+  </tbody>
+  </table>
+  <p style="margin-top:14px"><b>限流应对：</b>抖音按 IP 限流，间歇返回 403 / 人机验证页。策略是退避重试（2s / 4s）、请求间加 1–2s 随机延迟、API 失败时回退解析 <code>m.douyin</code> 页面数据（<code>_ROUTER_DATA</code> / <code>RENDER_DATA</code> / <code>og:video</code> 元标签）。</p>
+  <div class="callout"><b>技术难点：<code>a_bogus</code> 签名。</b>这是整条链路唯一的硬门槛，需要 JS 逆向。社区已有若干开源实现可复用，但会随抖音版本迭代失效 —— 工具必须把它做成<b>可插拔模块</b>，便于单独升级替换。</div>
+  <div class="callout blue" style="margin-top:12px">
+    <b>实测落地（2026-09-26，P4 已交付）：</b>
+    <ul style="margin:8px 0 0 20px">
+      <li><b>游客态纯 httpx 直连：不可行。</b>实测请求 video 页返回 72914 字节静态壳页，无 ttwid cookie、无 RENDER_DATA、无 play_addr（两种 UA 结果一致）。抖音风控直接拦截非浏览器流量。</li>
+      <li><b>主力路径：playwright + Edge 浏览器拦截。</b>实测 <code>chromium.launch(channel="msedge")</code>（复用系统 Edge，无需下载浏览器二进制）打开 video 页 2.9s，拦截浏览器自动发出的 <code>aweme/v1/web/aweme/detail</code> 响应（浏览器自带 TLS 指纹与 a_bogus 签名），取 <code>play_addr.url_list[0]</code>。端到端：解析+下载 8.4MB / 8.8s，抽帧目检<b>无可见水印</b>，串清洁重编码后 BVC+元数据全清。</li>
+      <li><b>兜底路径：直链直下。</b>粘贴 <code>douyinvod.com</code> / <code>tos-cn-v-</code> CDN 直链跳过解析直接下载（带 Referer + ftyp 魔数校验），100% 可靠。</li>
+      <li><b>a_bogus 直连留可插拔占位</b>（<code>core/signer.py</code>），未来接入社区实现时摆脱浏览器依赖。</li>
+      <li><b>注意：</b>下载的源文件仍带 L4a BVC 烙印与 L1 元数据（服务端转码写入），工具已串联清洁重编码自动清除。</li>
+    </ul>
+  </div>
+</div>
+
+<div class="layer part">
+  <div class="layer-head"><span class="n">L4a 编码层来源烙印（BVC 品牌指纹）</span><span class="lv">实测铁证 · 重编码可清</span></div>
+  <p>这是最容易漏掉、也最要命的一层。<b>所有经抖音服务端转码下发的视频</b>，其 H.264 码流的 <code>SEI user_data_unregistered</code> 里都写着字节自家编码器品牌与版本。实测本地 3 个源文件（yay-pure-outfit / lianggao-figure / lianggao-soft2hot），SEI 明文：</p>
+  <pre><code># 原始抖音源裸流（yay.h264）SEI payload
+bvc0ot v2.2.1.3-20250220        <span style="color:#888">← 字节 BVC 编码器品牌+版本，烙在码流层</span>
+
+# 同一文件重编码为 libx264 后，SEI payload 变为：
+x264 - core 164 r3172 c1c9931 - H.264/MPEG-4 AVC codec ...   <span style="color:#888">← BVC 烙印消失</span></code></pre>
+  <p><b>为什么 remux（纯重封装）清不掉？</b> remux 只改 MP4 容器（moov / udta / meta），音视频码流原样复制，SEI 烙印留在码流里。我们实测的原始 mp4 封装层 <code>TAG:encoder=Lavf58.76.100</code>（下载时被 remux 过，容器头早清了），但 <b>SEI 码流层的 bvc0ot 一个字节没动</b> —— 这正是"看文件头干净、编码看还有印"的根源。</p>
+  <p><b>清除手段：重编码换编码器。</b>用 libx264 / libx265 重新编码，SEI 由新编码器生成，BVC 标识被替换（见上方对比）。代价是<b>有画质损失 + 耗时</b>（crf 18 损失极小，但确有）。</p>
+  <div class="callout"><b>处理策略（给用户选择权）：</b>
+    <ul style="margin:8px 0 0 20px">
+      <li><b>模式 A · 零损失 remux：</b>画质 100% 保留，但<b>保留 BVC 来源烙印</b>。适合内部归档、自己二次创作时当源。</li>
+      <li><b>模式 B · 清洁重编码（默认）：</b>libx264 crf 16–18 重编码，去掉 BVC 烙印和 L1 残留，画质损失肉眼难辨。对外发布 / 当"原创"交付时选这个。</li>
+    </ul>
+  </div>
+  <p class="muted"><b>体检项：</b>扫描 H.264/265 SEI 与封装层编码器品牌，命中 <code>bvc0ot / BVC / bytedance / douyin</code> 等字节系标识即标红"编码层来源烙印：抖音服务端转码产物"。检测脚本见 <code>verify/analyze_codecbrand.py</code>，可对任意新源片复跑。</p>
+</div>
+
+<div class="layer no">
+  <div class="layer-head"><span class="n">L4b 像素频域鲁棒暗水印</span><span class="lv">实测未检出 · 无解</span></div>
+  <p>字节官方口径：暗水印打在画面底层频域数据里，肉眼不可见；<b>二创、混剪、抽帧都无法消除</b>；一旦检出判定搬运，无申诉渠道。提取算法和密钥在字节手里，开源侧没有、也不可能有验证手段。</p>
+  <div class="callout blue" style="margin:12px 0">
+    <b>实测验证（2026-09-26，本地 3 个抖音源文件）：</b>
+    <ul style="margin:8px 0 0 20px">
+      <li><b>像素频域：</b>逐帧 DCT 稳定性分析（每视频 25–31 帧），<b>未检出跨帧稳定的非压缩频域模式</b> —— 稳定峰 0 / 1 / 0 个，唯一一个落在 4×4 压缩网格，属编码 artifact</li>
+      <li><b>结论：</b>经解析链路（play_addr）获取的自然流源片，<b>未见频域暗水印痕迹</b>。这层仅在广告投放链路生效，与 L4a 的编码层烙印是两回事。</li>
+    </ul>
+  </div>
+  <p class="muted"><b>建议：</b>素材来自自然流 → 跳过。投放千川/本地推 → 正确解法是<b>使用原创源文件</b>（自有账户导出、客户后台推送、API 同步），而非破解水印。</p>
+</div>
+
+<div class="layer no">
+  <div class="layer-head"><span class="n">L5 内容指纹层</span><span class="lv">工具边界之外</span></div>
+  <p>视频指纹（感知哈希 / 帧特征）、音频指纹（BGM、原声）、分镜相似度 —— 这些是<b>内容本身的数学特征</b>，不是附加在文件里的标记。平台"相似分镜判断"就靠这一层。</p>
+  <p class="muted">这一层决定了"去完水印能不能用"。需在内容生产环节解决，不是后处理工具的能力范围。</p>
+</div>
+
+<h2>四、工具架构设计</h2>
+<p class="muted">PySide6 桌面 GUI · Windows</p>
+
+<div class="callout blue">
+  <b>产品形态（老板拍板，2026-09-26）：</b>桌面窗口里<b>手动选择或批量选择本地视频文件</b> → 点"开始处理" → 工具自动跑完所有可去水印层（L1 元数据 / L2 可见 / L4a 编码层烙印）→ <b>输出可直接发抖音的无水印成品</b>。
+  <ul style="margin:8px 0 0 20px">
+    <li><b>输入：</b>本地视频文件（支持多选、批量拖入、整个文件夹）</li>
+    <li><b>一键：</b>选完文件 → 选处理模式（默认"清洁重编码"）→ 点确定 → 全自动，无需逐文件操作</li>
+    <li><b>输出：</b>去净所有可去水印层，H.264 + AAC 的 MP4，保留原分辨率/帧率与竖屏比例，可直接上传抖音</li>
+  </ul>
+  <b>范围界定：</b>首版（MVP）<b>以本地文件处理为主线</b>（对应"选文件"）。链接解析下载（标签1）作为后续增强——老板当前手上素材已是本地文件，先做能立刻跑通的本地一键去水印。
+</div>
+
+<div class="arch">
+douyin-wm-remover/
+├── core/
+│   ├── parser.py      <span class="cm"># 短链 → aweme_id → 详情 API → 无水印直链</span>
+│   ├── signer.py      <span class="cm"># a_bogus / msToken / ttwid —— 可插拔，便于单独升级</span>
+│   ├── downloader.py  <span class="cm"># 下载 + ftyp 魔数校验 + 退避重试</span>
+│   ├── inspector.py   <span class="cm"># 体检：L1 元数据 + L2 水印区域 + L4a BVC 烙印扫描</span>
+│   ├── remux.py       <span class="cm"># L1 剥离，无损（保留 L4a 码流层）</span>
+│   ├── transcode.py   <span class="cm"># L4a 清除：重编码换编码器去 BVC 烙印</span>
+│   ├── inpainter.py   <span class="cm"># L2 擦除：OpenCV 基础档(可用) / ProPainter 无痕档(预留) + maskgen 蒙版生成</span>
+│   └── pipeline.py    <span class="cm"># 编排：解析 → 下载 → 体检 → 处理 → 导出</span>
+├── gui/               <span class="cm"># PySide6</span>
+│   ├── tab_parse.py   <span class="cm"># 标签1：链接解析，支持批量粘贴</span>
+│   ├── tab_local.py   <span class="cm"># 标签2：本地文件，拖拽 + 框选区域 + 选档</span>
+│   └── tab_inspect.py <span class="cm"># 标签3：体检报告，五层状态一目了然</span>
+├── models/            <span class="cm"># E2FGVI / ProPainter 权重</span>
+└── config.json
+</div>
+
+<h3>三个标签页</h3>
+<table>
+<thead><tr><th style="width:110px">标签页</th><th>输入</th><th>做什么</th></tr></thead>
+<tbody>
+<tr><td>本地处理<br><span class="muted" style="font-size:12px">（主线·MVP）</span></td><td>本地视频文件（多选/拖入/整文件夹）</td><td>选文件 → 选模式（清洁重编码默认）→ 一键跑完 L1 + L2 + L4a → 出可直接发抖音成品。带批量队列与进度</td></tr>
+<tr><td>体检报告</td><td>任意视频文件</td><td>扫描并报告：元数据残留、可见水印疑似区域、<b>编码层来源烙印（BVC 品牌）</b>、是否来自带水印副本、指纹风险提示</td></tr>
+<tr><td>链接解析<br><span class="muted" style="font-size:12px">（增强）</span></td><td>抖音分享链接 / 整段文案（批量）</td><td>走 L3 链路拿无水印源流直下，再过 L1 剥离。画质零损失、秒级</td></tr>
+</tbody>
+</table>
+
+<h2>五、开发计划</h2>
+<div class="callout"><b>MVP 优先级：</b>先打通"本地选文件 → 一键去水印 → 出成品"主链路（P1–P3），链接解析（P4）后置为增强。老板实际素材（解析源）无可见水印、有 BVC 烙印与元数据，P2 清洁重编码 + 元数据清理即可立刻产出可用成品。</div>
+<table>
+<thead><tr><th style="width:60px">阶段</th><th style="width:180px">内容</th><th>交付标准</th></tr></thead>
+<tbody>
+<tr><td>P1</td><td>本地文件选择 + 批量队列 + 体检</td><td>支持多选/拖入/整文件夹；自动体检 L1 元数据 + L4a BVC 烙印 + L2 可见水印区域；队列与进度 UI</td></tr>
+<tr><td>P2</td><td>清洁重编码（L4a）+ 元数据清理（L1）+ 成品输出</td><td>默认 libx264 crf16–18 重编码去 BVC 烙印 + 去 L1 元数据；输出 H.264+AAC MP4 可直接发抖音；用老板实际素材跑通验证</td></tr>
+<tr><td>P3</td><td>L2 擦除（OpenCV 基础档 ✅ / ProPainter 无痕档 ⏸）</td><td><b>已交付：</b>蒙版生成 + OpenCV inpaint 闭环实测通过（真实素材右下角水印完全擦除）；GUI 已加"擦除可见水印"开关。ProPainter 因 mmcv（Python3.13+Win 无 wheel）暂缓，升级路径：Py3.11 venv 或云端 GPU</td></tr>
+<tr><td>P4</td><td>链接解析下载（<b>已完成 2026-09-26</b>）</td><td>双引擎：playwright+Edge 拦截 detail 取 play_addr（实测端到端通过，无可见水印）+ 直链直下兜底；GUI 标签1 批量粘贴 → 下载 → 自动去烙印出成品</td></tr>
+<tr><td>P5</td><td>GUI 打磨 + 体检报告可视化</td><td>三标签页成型，批量队列 + 进度 + 日志 + 成品预览</td></tr>
+</tbody>
+</table>
+
+<h2>六、边界说明</h2>
+<ul>
+<li><b>解析依赖接口存续。</b>抖音一旦改版，<code>a_bogus</code> 或详情 API 失效，解析链路必须跟进适配。这是所有同类工具的共同命门，需预留维护成本。</li>
+<li><b>AI 硬擦不保证完全无痕。</b>大面积遮挡、快速运动、复杂纹理下会有残留，交付前需抽检。</li>
+<li><b>L4b / L5 不在本工具能力范围内</b>（频域暗水印无解、内容指纹管不了），方案中不做虚假承诺；<b>L4a 编码层烙印可经重编码清除</b>。</li>
+<li><b>合规：</b>解析与擦除能力本身是中性的文件处理技术，仅应用于自己拥有权利的素材（自己拍摄的源文件、客户授权素材）。去除他人原创视频水印后二次发布或商用，构成侵权，且平台侧的内容指纹依然可检出。</li>
+<li><b>"可直接发抖音"的边界：</b>本工具保证输出在 L1–L4a 层面干净（无可见水印、无 BVC 来源烙印、无元数据残留），可直接上传。但 <b>L5 内容指纹层（画面/音频本身的数学特征）无法去除</b>——若直接搬运他人成片，平台仍可能凭内容指纹判搬运。原创复刻（换机位/换装/换BGM/重剪节奏）才是根本解法。</li>
+</ul>
+
+<footer>方案基于开源社区调研与字节公开规则整理。所有可行性评级均已标注依据，未做无根据承诺。</footer>
+
+</div>
+</body>
+</html>
